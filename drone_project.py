@@ -32,12 +32,12 @@ try:
 
         # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
         #rgb_small_frame = small_frame[:, :, ::-1]
-        frame = frame[:, :, ::-1]
+        rgb_frame = frame[:, :, ::-1]
 
         # Only process every other frame of video to save time
         if process_this_frame:
             # Find all the faces and face encodings in the current frame of video
-            face_locations = face_recognition.face_locations(frame) #instead of small frame
+            face_locations = face_recognition.face_locations(rgb_frame) #instead of small frame
 
         process_this_frame = not process_this_frame
 
@@ -79,10 +79,10 @@ try:
             cv2.rectangle(frame, (left - 1, bottom + 70), (right + 1, bottom + 35), (0, 255, 0), cv2.FILLED)
             if (left < 160):
                 cv2.putText(frame, "rotate left", (left + 6, bottom + 66), font, 1.0, (255, 255, 255), 1)
-                drone.move(ccw=drone_speed)
+                drone.move(ccw=1)
             elif (right > 480):
                 cv2.putText(frame, "rotate right", (left + 6, bottom + 66), font, 1.0, (255, 255, 255), 1)
-                drone.move(cw=drone_speed)
+                drone.move(cw=1)
             else:
                 cv2.putText(frame, "centered", (left + 6, bottom + 66), font, 1.0, (255, 255, 255), 1)
 
