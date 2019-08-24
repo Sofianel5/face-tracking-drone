@@ -1,6 +1,5 @@
 import face_recognition
 import cv2
-import time
 import pyardrone
 
 # Initialize face recognition variables
@@ -19,14 +18,10 @@ drone = pyardrone.ARDrone()
 drone.navdata_ready.wait()  # wait until NavData is ready
 drone.video_ready.wait()  # wait until video is ready
 
-# Grab a single frame of video
-#last_frame = drone.video_client.frame
-#frame = last_frame
 while True:
     # Grab a single frame of video
     frame = drone.video_client.frame
 
-    #if frame != last_frame:
     # Resize frame of video to 1/2 size for faster face recognition processing
     small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
 
@@ -75,14 +70,21 @@ while True:
         else:
             cv2.putText(frame, "centered", (left + 6, bottom + 66), font, 1.0, (255, 255, 255), 1)
 
+        # up/down control
+        cv2.rectangle(frame, (left - 1, bottom + 105), (right + 1, bottom + 70), (0, 0, 255), cv2.FILLED)
+        if (top < 180):
+            cv2.putText(frame, "move up", (left + 6, bottom + 99), font, 1.0, (255, 255, 255), 1)
+        elif (bottom > 180):
+            cv2.putText(frame, "move down", (left + 6, bottom + 99), font, 1.0, (255, 255, 255), 1)
+        else:
+            cv2.putText(frame, "centered", (left + 6, bottom + 99), font, 1.0, (255, 255, 255), 1)
+
     # Display the resulting image
     cv2.imshow('Video', frame)
 
     # Hit 'q' on the keyboard to quit!
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
-    #last_frame = frame
 
 # Release handle to the webcam
 video_capture.release()
