@@ -1,7 +1,9 @@
 import face_recognition
 import cv2
+import time
+import pyardrone
 
-# Initialize variables
+# Initialize face recognition variables
 video_capture = cv2.VideoCapture(0)
 face_locations = []
 face_encodings = []
@@ -11,10 +13,20 @@ font = cv2.FONT_HERSHEY_DUPLEX
 width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
 height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+# Initialize drone variables
+drone = pyardrone.ARDrone()
+
+drone.navdata_ready.wait()  # wait until NavData is ready
+drone.video_ready.wait()  # wait until video is ready
+
+# Grab a single frame of video
+#last_frame = drone.video_client.frame
+#frame = last_frame
 while True:
     # Grab a single frame of video
-    ret, frame = video_capture.read()
+    frame = drone.video_client.frame
 
+    #if frame != last_frame:
     # Resize frame of video to 1/4 size for faster face recognition processing
     small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
@@ -70,6 +82,8 @@ while True:
     # Hit 'q' on the keyboard to quit!
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
+    #last_frame = frame
 
 # Release handle to the webcam
 video_capture.release()
