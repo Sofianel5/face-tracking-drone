@@ -107,7 +107,7 @@ try:
         # Hit 'e' for "emergency" panic to get it out of a tree, etc.
         if cv2.waitKey(1) & 0xFF == ord('e'):
             drone.emergency()
-except Exception, e:
+except Exception as e:
     print("There was a problem:", str(e))
 finally:
     print("Landing drone.")
