@@ -14,9 +14,12 @@ height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 # Initialize drone variables
 drone = pyardrone.ARDrone()
+drone_speed = 0.25
 
 drone.navdata_ready.wait()  # wait until NavData is ready
 drone.video_ready.wait()  # wait until video is ready
+
+drone.takeoff()  # take off and await further instruction
 
 while True:
     # Grab a single frame of video
@@ -35,8 +38,14 @@ while True:
 
     process_this_frame = not process_this_frame
 
-    # Display the results
-    for top, right, bottom, left in face_locations:
+    # Parse image if face detected
+    if len(face_locations) > 0:
+        # Get edges of face's bounding box
+        top = face_locations[0][0]
+        right = face_locations[0][1]
+        bottom = face_locations[0][2]
+        left = face_locations[0][3]
+
         # Scale back up face locations since the frame we detected in was scaled to 1/2 size
         top *= 2
         right *= 2
@@ -56,17 +65,21 @@ while True:
         cv2.rectangle(frame, (left - 1, bottom + 35), (right + 1, bottom), (255, 0, 0), cv2.FILLED)
         if (height > 100):
             cv2.putText(frame, "back up", (left + 6, bottom + 28), font, 1.0, (255, 255, 255), 1)
+            drone.move(backward=drone_speed)
         elif (height < 75):
             cv2.putText(frame, "move forwards", (left + 6, bottom + 28), font, 1.0, (255, 255, 255), 1)
+            drone.move(forward=drone_speed)
         else:
             cv2.putText(frame, "stay put", (left + 6, bottom + 28), font, 1.0, (255, 255, 255), 1)
 
-        # left/right control
+        # rotation control
         cv2.rectangle(frame, (left - 1, bottom + 70), (right + 1, bottom + 35), (0, 255, 0), cv2.FILLED)
         if (left < 160):
-            cv2.putText(frame, "move left", (left + 6, bottom + 66), font, 1.0, (255, 255, 255), 1)
+            cv2.putText(frame, "rotate left", (left + 6, bottom + 66), font, 1.0, (255, 255, 255), 1)
+            drone.move(ccw=drone_speed)
         elif (right > 480):
-            cv2.putText(frame, "move right", (left + 6, bottom + 66), font, 1.0, (255, 255, 255), 1)
+            cv2.putText(frame, "rotate right", (left + 6, bottom + 66), font, 1.0, (255, 255, 255), 1)
+            drone.move(cw=drone_speed)
         else:
             cv2.putText(frame, "centered", (left + 6, bottom + 66), font, 1.0, (255, 255, 255), 1)
 
@@ -74,17 +87,23 @@ while True:
         cv2.rectangle(frame, (left - 1, bottom + 105), (right + 1, bottom + 70), (0, 0, 255), cv2.FILLED)
         if (top < 180):
             cv2.putText(frame, "move up", (left + 6, bottom + 99), font, 1.0, (255, 255, 255), 1)
+            drone.move(up=drone.speed)
         elif (bottom > 180):
             cv2.putText(frame, "move down", (left + 6, bottom + 99), font, 1.0, (255, 255, 255), 1)
+            drone.move(down=drone.speed)
         else:
             cv2.putText(frame, "centered", (left + 6, bottom + 99), font, 1.0, (255, 255, 255), 1)
 
     # Display the resulting image
     cv2.imshow('Video', frame)
 
-    # Hit 'q' on the keyboard to quit!
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    # Hit 'l' for immediate landing
+    if cv2.waitKey(1) & 0xFF == ord('l'):
+        drone.land()
         break
+    # Hit 'e' for "emergency" panic to get it out of a tree, etc.
+    if cv2.waitKey(1) & 0xFF == ord('e'):
+        drone.emergency()
 
 # Release handle to the webcam
 video_capture.release()
