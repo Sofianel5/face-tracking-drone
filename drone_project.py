@@ -15,14 +15,15 @@ height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 # Initialize drone variables
 drone = pyardrone.ARDrone()
-drone_speed = 0.25
+drone_speed = 0.5
 
-drone.navdata_ready.wait()  # wait until NavData is ready
+
+#drone.navdata_ready.wait()  # wait until NavData is ready
 drone.video_ready.wait()  # wait until video is ready
 
 drone.takeoff()  # take off and await further instruction
 
-try:
+try: # Land if there are any problems
     while True:
         # Grab a single frame of video
         frame = drone.video_client.frame
@@ -66,10 +67,10 @@ try:
 
             # forward/back control
             cv2.rectangle(frame, (left - 1, bottom + 35), (right + 1, bottom), (255, 0, 0), cv2.FILLED)
-            if (height > 100):
+            if (height > 75):
                 cv2.putText(frame, "back up", (left + 6, bottom + 28), font, 1.0, (255, 255, 255), 1)
                 drone.move(backward=drone_speed)
-            elif (height < 75):
+            elif (height < 50):
                 cv2.putText(frame, "move forwards", (left + 6, bottom + 28), font, 1.0, (255, 255, 255), 1)
                 drone.move(forward=drone_speed)
             else:
@@ -96,22 +97,38 @@ try:
                 drone.move(down=drone_speed)
             else:
                 cv2.putText(frame, "centered", (left + 6, bottom + 99), font, 1.0, (255, 255, 255), 1)
+        else:  # no faces detected
+            drone.hover()
 
         # Display the resulting image
         cv2.imshow('Video', frame)
 
-        # Hit 'l' for immediate landing
-        if cv2.waitKey(1) & 0xFF == ord('l'):
-            drone.land()
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('l'):  # 'l' to land
             break
-        # Hit 'e' for "emergency" panic to get it out of a tree, etc.
-        if cv2.waitKey(1) & 0xFF == ord('e'):
+        elif key == ord('e'):  # 'e' for emergency power-off
             drone.emergency()
+        elif key == ord('t'):  # 't' to takeoff
+            drone.takeoff()
+        elif key == 0:  # up arrow = forward
+            drone.move(forward=drone_speed)
+        elif key == 1:  # down arrow = backward
+            drone.move(backward=drone_speed)
+        elif key == 2:  # left arrow = ccw
+            drone.move(ccw=1)
+        elif key == 3:  # right arrow = cw
+            drone.move(cw=1)
+        elif key == ord('z'):  # 'z' = up
+            drone.move(up=drone_speed)
+        elif key == ord('x'):  # 'x' = down
+            drone.move(down=drone_speed)
+
 except Exception as e:
     print("There was a problem:", str(e))
 finally:
     print("Landing drone.")
     drone.land()
+    drone.close()
 
     # Release handle to the webcam
     video_capture.release()
